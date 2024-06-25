@@ -7,7 +7,7 @@ class ApiError extends Error{
     ){
         super(message),
         this.statuscode = statuscode,
-        this.error = error,
+        this.error = "error",
         this.success = false,
         this.message = message
         this.errors = errors
@@ -17,7 +17,7 @@ class ApiError extends Error{
         }else{
             Error.captureStackTrace(this,this.constructor)
         }
-
+        // return 
     }
 }
 
