@@ -3,7 +3,7 @@ import Apierror from "../utils/apiError.js"
 import { User } from "../models/users.models.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import ApiResponse from "../utils/apiResponse.js"
-
+import jwt from "jsonwebtoken";
 
 // const registerUser = asyncHandler( async (req,res) => {
 //     console.log('IN the get req')
@@ -117,7 +117,7 @@ const login = asyncHandler( async (req,res) => {
     // const users = User.find()
     const {username ,email, password} = req.body
 
-    if (!username || !email ){
+    if (!(username || email) ){
         throw new Apierror(406,"username or email is required")
     }
 
@@ -184,5 +184,55 @@ const logout = asyncHandler( async (req,res) => {
 
 
 })
+
+
+const refreshAccessToken = asyncHandler( async (req,res) => {
+    const reqrefreshToken = req.cookies?.refreshToken
+
+    if (!reqrefreshToken){
+        throw new Apierror(401,"No refresh token found.")
+    }
+
+    const decodedToken  = jwt.verify(reqrefreshToken,process.env.ACCESS_TOKEN)
+
+    if (!decodedToken){
+        throw new Apierror(401,"Invalid refresh token.")
+    }
+
+    const refUserObj = await User.findById(decodedToken._id).select("-password")
+
+    if (!refUserObj){
+        throw new Apierror(403,"Invalid refresh token.")
+    }
+    
+    if (refUserObj.refreshToken == reqrefreshToken){
+        throw new Apierror(402,"refresh token is expired or used.")
+    }
+
+    const {newaccessToken,newrefreshToken} = await generateAccessAndRefreshToken(refUserObj._id)
+
+    const options = {
+        httpOnly:true,
+        secure:true
+    }
+
+    return res
+    .status(200)
+    .cookie("accessToken",newaccessToken,options)
+    .cookie("refreshToken",newrefreshToken,options)
+    .json(
+        new ApiResponse(208,{
+            user:{refUserObj, newaccessToken, newrefreshToken}
+        },
+        "access token refreshed.")
+    )
+
+})
+
 // export default registerUser, getUser;
-export { registerUser, getUser, login, logout }
+export { registerUser
+    ,getUser
+    ,login
+    ,logout
+    ,refreshAccessToken
+}
