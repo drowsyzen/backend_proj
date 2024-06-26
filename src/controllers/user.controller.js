@@ -1,7 +1,7 @@
 import asyncHandler from "../utils/asyncHandler.js"
 import Apierror from "../utils/apiError.js"
 import { User } from "../models/users.models.js";
-import { uploadCloudinary } from "../utils/cloudinary.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import ApiResponse from "../utils/apiResponse.js"
 
 // const registerUser = asyncHandler( async (req,res) => {
@@ -40,11 +40,11 @@ const registerUser = asyncHandler( async (req,res) => {
     const coverImagelocalpath = req.files?.coverImage[0]?.path
     
     if (!avatarlocalpath){
-        throw new Apierror(403,'avatar is required')
+        throw new Apierror(403,'avatar is required(local)')
     }
     
-    const avatar = await uploadCloudinary(avatarlocalpath)
-    const coverImage = await uploadCloudinary(coverImagelocalpath)
+    const avatar = await uploadOnCloudinary(avatarlocalpath)
+    const coverImage = await uploadOnCloudinary(coverImagelocalpath)
     
     if (!avatar){
         throw new Apierror(403,'avatar is required')
@@ -68,11 +68,23 @@ const registerUser = asyncHandler( async (req,res) => {
         throw new Apierror(506,"something went wrong while registering user")
     }
 
-    return new res.status(201).json(
-        new ApiResponse(201,"User added successfully.")
+    return res.status(201).json(
+        new ApiResponse(201,createduser,"User added successfully.")
     ) 
 
 })
 
+const getUser = asyncHandler( async (req,res) => {
+    console.log('IN the get req')
+    const users = User.findOne()
+    console.log('IN the get req',users)
+    
+    return res.status(201).json(
+        new ApiResponse(201,users,"User added successfully."))
+    
+})
 
-export default registerUser
+
+
+// export default registerUser, getUser;
+export { registerUser, getUser }
