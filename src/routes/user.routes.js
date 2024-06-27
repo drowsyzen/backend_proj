@@ -5,7 +5,9 @@ import {
     login,
     getUser,
     logout,
-    refreshAccessToken,
+    refreshAccessToken
+    ,getUserChannelProfile
+    ,getWatchHistory
  } from "../controllers/user.controller.js";
 import verifyJWT from "../middlewares/auth.middleware.js"
 import { upload } from "../middlewares/multer.middleware.js"
@@ -32,6 +34,8 @@ userRoute.route("/getuser").get(getUser)
 userRoute.route("/login").post(login)
 userRoute.route("/logout").post(verifyJWT,logout)
 userRoute.route("/refresh").post(refreshAccessToken)
+userRoute.route("/channelprofile").post(getUserChannelProfile)
+userRoute.route("/watchhistory").post(getWatchHistory)
 
 
 export  default userRoute

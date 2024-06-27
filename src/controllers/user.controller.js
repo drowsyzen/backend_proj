@@ -4,6 +4,7 @@ import { User } from "../models/users.models.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import ApiResponse from "../utils/apiResponse.js"
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 // const registerUser = asyncHandler( async (req,res) => {
 //     console.log('IN the get req')
@@ -229,10 +230,143 @@ const refreshAccessToken = asyncHandler( async (req,res) => {
 
 })
 
+
+const getUserChannelProfile = asyncHandler( async(req,res) => {
+    const channel = req.params.channel
+
+    if (!channel) {
+        throw new Apierror(401,"channel is required")
+    }
+
+    // const chaneldata = await User.findOne({username:channel}).select("-password -refreshToken")
+
+
+    const channelData = await User.aggregate([
+        {
+            $match :{
+                username : username
+            }
+        },
+        {
+            $lookup :{
+                from : "Subscription",
+                localField : '_id',
+                foreignField : "channel",
+                as : "subscribers"
+            }
+        },
+        {
+            $lookup :{
+                from : "Subscription",
+                localField : '_id',
+                foreignField : "subscriber",
+                as : "subscribedTo"
+            }
+        },
+        {
+            $addFields : {
+                subscribersCount :{
+                    $size : "$subscribers"
+                },
+                subscribedCount :{
+                    $size : "$subscribedTo"
+                },
+                isSubscribed : {
+                    $cond : {
+                        if : {$in: [req.user?._id,"$subscribers.subscriber"]},
+                        then : true,
+                        else : false
+                    }
+                }
+            }
+        },
+        {
+            $project : {
+                fullName : 1,
+                username : 1,
+                email : 1,
+                subscribedCount : 1,
+                subscribersCount : 1,
+                isSubscribed : 1,
+                avatar : 1,
+                coverImage : 1
+            }
+        }
+    ])
+
+
+    if (!channelData?.length){
+        throw new Apierror(401,"channel not found.")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, channelData[0], "channel data found successfully.")
+    )
+
+})
+
+const getWatchHistory = asyncHandler(async (req,res) => {
+
+    const watchHistoryData = await User.aggregate([
+        {
+            $match : {
+                _id : mongoose.Types.ObjectId(req.user._id)
+            }
+        },
+        {
+            $lookup : {
+                from : "videos",
+                localField : "watchHistory",
+                foreignField : "_id",
+                as : "watchhistorylist",
+                pipeline : [
+                    {
+                        $lookup : {
+                            from : "users",
+                            localField : "owner",
+                            foreignField : "_id",
+                            as : "owner",
+                            pipeline : {
+                                $project : {
+                                    fullName : 1,
+                                    avatar : 1,
+                                    username : 1
+                                }
+                            }
+                        }
+                    },
+                    {
+                        $addFields:{
+                            owner : {
+                                $first : "$owner"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            $addFields :{}
+        }
+    ])
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(256,watchHistoryData[0],"Watch history found successfully")
+    )
+
+})
+
+
 // export default registerUser, getUser;
 export { registerUser
     ,getUser
     ,login
     ,logout
     ,refreshAccessToken
+    ,getUserChannelProfile
+    ,getWatchHistory
 }
