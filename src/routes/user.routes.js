@@ -34,8 +34,8 @@ userRoute.route("/getuser").get(getUser)
 userRoute.route("/login").post(login)
 userRoute.route("/logout").post(verifyJWT,logout)
 userRoute.route("/refresh").post(refreshAccessToken)
-userRoute.route("/channelprofile").post(getUserChannelProfile)
-userRoute.route("/watchhistory").post(getWatchHistory)
+userRoute.route("/channelprofile/:username").get(getUserChannelProfile)
+userRoute.route("/watchhistory").get(verifyJWT,getWatchHistory)
 
 
 export  default userRoute
