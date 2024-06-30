@@ -18,11 +18,15 @@ const generateAccessAndRefreshToken = async (userid) => {
 
         const usrobej = await User.findById({_id:userid})
         const accessToken = await usrobej.generateAccessToken()
-        const refreshToken = await usrobej.generateRefreshToken()
 
+        
+        const refreshToken = await usrobej.generateRefreshToken()
+        
         usrobej.refreshToken = refreshToken
         await usrobej.save({validateBeforeSave:false}) 
-
+        
+        // console.log(accessToken,'accessToken')
+        // console.log( refreshToken   ,'accessToken')
         return { accessToken, refreshToken }
 
     }
@@ -80,7 +84,7 @@ const registerUser = asyncHandler( async (req,res) => {
 
     })
 
-    const createduser = User.findById(userobj._id).select(
+    const createduser = await User.findById(userobj._id).select(
         "-password -refreshToken"
     )
 
@@ -116,13 +120,19 @@ const getUser = asyncHandler( async (req,res) => {
 const login = asyncHandler( async (req,res) => {
     // console.log('IN the get req')
     // const users = User.find()
+
+    // console.log('req.body',req.body)
+
     const {username ,email, password} = req.body
+
+    // console.log(username || email, ' value ................')
+    // console.log(username, email, ' value ................')
 
     if (!(username || email) ){
         throw new Apierror(406,"username or email is required")
     }
 
-    const usrobj = User.findOne({
+    const usrobj =await User.findOne({
         $or:[ {username}, {email}]
     })
 
@@ -130,16 +140,25 @@ const login = asyncHandler( async (req,res) => {
         throw new Apierror(407,"User does not exists")
     }
 
-    const passwordcheck = await usrobj.isPasswordCorrect(password)
+    // console.log("usrobj>>>>>>>",usrobj)
+
+    const passwordcheck = await usrobj.schema.methods.isPasswordCorrect(password,usrobj.password)
 
     if (!passwordcheck){
 
         throw new Apierror(408,'Password is not correct')
     }
 
-    const { acsToken,refshToken } = await generateAccessAndRefreshToken(usrobj._id)
+    // console.log('usrobj._id',usrobj._id)
 
-    const loggedinUser = User.findById(usrobj._id).select("-password -refreshToken")
+    const resp = await generateAccessAndRefreshToken(usrobj._id)
+    
+    const acsToken = resp.accessToken, refshToken = resp.refreshToken
+    // console.log(acsToken,refshToken ,"resp")
+
+    // console.log(acsToken,'acsToken')
+
+    const loggedinUser = await User.findById(usrobj._id).select("-password -refreshToken")
 
     const options = {
         httpOnly:true,
