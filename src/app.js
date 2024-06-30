@@ -17,8 +17,11 @@ app.use(cookieParser())
 // routes import
 import userRoute from "./routes/user.routes.js";
 import subscriptionRoute from "./routes/subscription.route.js";
+import playlistRoute from "./routes/playlist.route.js";
+
 // console.log('in route')
 app.use("/user",userRoute)
 app.use("/subscription",subscriptionRoute)
+app.use("/playlist",playlistRoute)
 
 export default app
