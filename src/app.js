@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser";
 const app = express()
 
 app.use(cors({
-    orgin:'*',
+    origin:'*',
     credentials:true
 }))
 app.use(express.json({limit:"16kb"}))
@@ -16,7 +16,9 @@ app.use(cookieParser())
 
 // routes import
 import userRoute from "./routes/user.routes.js";
+import subscriptionRoute from "./routes/subscription.route.js";
 // console.log('in route')
 app.use("/user",userRoute)
+app.use("/subscription",subscriptionRoute)
 
 export default app
